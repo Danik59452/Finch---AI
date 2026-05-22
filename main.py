@@ -41,14 +41,20 @@ async def ask_ai(message: types.Message):
         ]
     }
 
-    try:
+try:
+        import requests
+        # Делаем прямой запрос БЕЗ proxies=...
         response = requests.post(url, headers=headers, json=data)
-        result = response.json()
-
-        ai_text = result['choices'][0]['mesage']['content']
-        await message.answer(ai_text)
-
+        
+        if response.status_code == 200:
+            result = response.json()
+            reply_text = result["choices"][0]["message"]["content"]
+            await message.answer(reply_text)
+        else:
+            await message.answer(f"Ошибка OpenRouter: {response.status_code}")
+            
     except Exception as e:
+        print(f"Ошибка: {e}")
         await message.answer("Черт, что-то пошло не так с серваром связи...")
         print(f"Ошибка: {e}")
 
