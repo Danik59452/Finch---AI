@@ -3,6 +3,12 @@ import requests
 from aiogram import Bot, Dispatcher, types
 from aiogram.filters import CommandStart
 import os
+
+TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN", "8315686050:AAFXC9WVZA_CMv98iUwDoXDvw23Dcnnx8fU")
+bot = Bot(token=TELEGRAM_TOKEN)  # <--- Вот эта строчка с маленькой буквы 'bot' обязательно должна быть!
+dp = Dispatcher()
+
+
 OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
 
 headers = {
