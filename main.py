@@ -2,9 +2,13 @@ import asyncio
 import requests
 from aiogram import Bot, Dispatcher, types
 from aiogram.filters import CommandStart
+import os
+OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
 
-
-bot = Bot(token="8315686050:AAFXC9WVZA_CMv98iUwDoXDvw23Dcnnx8fU")
+headers = {
+        "Authorization": f"Bearer {OPENROUTER_API_KEY}",
+        "Content-Type": "application/json"
+    }
 dp = Dispatcher()
 
 @dp.message(CommandStart())
