@@ -3,9 +3,8 @@ import requests
 from aiogram import Bot, Dispatcher, types
 from aiogram.filters import CommandStart
 
-TELEGRAM_TOKEN = "8862783066:AAHVH0rirzZRWgSnA1AHsZKgrkp7b25sBD4"
 
-bot = Bot(token="8315686050:AAHKUSPtiKFpyq14cd1B2-risO8TMH9GiHU")
+bot = Bot(token="8315686050:AAFXC9WVZA_CMv98iUwDoXDvw23Dcnnx8fU")
 dp = Dispatcher()
 
 @dp.message(CommandStart())
