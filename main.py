@@ -41,7 +41,7 @@ async def ask_ai(message: types.Message):
         ]
     }
 
-try:
+    try:
         import requests
         # Делаем прямой запрос БЕЗ proxies=...
         response = requests.post(url, headers=headers, json=data)
