@@ -5,7 +5,7 @@ from aiogram import Bot, Dispatcher, types
 from aiogram.filters import CommandStart
 
 # 1. Авторизация Telegram
-TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN", "8315686050:AAFXC9WVZA_CMv98iUwDoXDvw23Dcnnx8fU")
+TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN", "8315686050:AAGtTqMzAtPZMkeznSLfnhoE5VSaQZUrhwA")
 bot = Bot(token=TELEGRAM_TOKEN)
 dp = Dispatcher()
 
@@ -38,7 +38,7 @@ async def ask_ai(message: types.Message):
     }
 
     data = {
-        "model": "meta-llama/llama-3-8b-instruct:free",
+        "model": "qwen/qwen-2.5-7b-instruct:free",
         "messages": [
             {
                 "role": "system",
