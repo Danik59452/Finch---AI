@@ -7,9 +7,7 @@ TELEGRAM_TOKEN = "8862783066:AAHVH0rirzZRWgSnA1AHsZKgrkp7b25sBD4"
 
 OPENROUTER_API_KEY = "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"
 
-from aiogram.client.session.aiohttp import AiohttpSession
-session = AiohttpSession(proxy="http://proxy.server:3128")
-bot = Bot(token=TELEGRAM_TOKEN, session=session)
+bot = Bot(token="8315686050:AAHKUSPtiKFpyq14cd1B2-risO8TMH9GiHU")
 dp = Dispatcher()
 
 @dp.message(CommandStart())
