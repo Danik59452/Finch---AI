@@ -5,8 +5,6 @@ from aiogram.filters import CommandStart
 
 TELEGRAM_TOKEN = "8862783066:AAHVH0rirzZRWgSnA1AHsZKgrkp7b25sBD4"
 
-OPENROUTER_API_KEY = "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"
-
 bot = Bot(token="8315686050:AAHKUSPtiKFpyq14cd1B2-risO8TMH9GiHU")
 dp = Dispatcher()
 
@@ -25,7 +23,7 @@ async def ask_ai(message: types.Message):
     url = "https://openrouter.ai/api/v1/chat/completions"
 
     headers = {
-        "Authorization": f"Bearer {OPENROUTER_API_KEY}",
+       "Authorization": "Bearer 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",
         "Content-Type": "application/json"
     }
 
