@@ -1,27 +1,19 @@
 import asyncio
+import os
 import requests
 from aiogram import Bot, Dispatcher, types
 from aiogram.filters import CommandStart
-import os
 
+# 1. Авторизация Telegram
 TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN", "8315686050:AAFXC9WVZA_CMv98iUwDoXDvw23Dcnnx8fU")
-bot = Bot(token=TELEGRAM_TOKEN)  # <--- Вот эта строчка с маленькой буквы 'bot' обязательно должна быть!
-dp = Dispatcher()
-
-
-OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
-
-headers = {
-        "Authorization": f"Bearer {OPENROUTER_API_KEY}",
-        "Content-Type": "application/json"
-    }
+bot = Bot(token=TELEGRAM_TOKEN)
 dp = Dispatcher()
 
 @dp.message(CommandStart())
 async def cmd_start(message: types.Message):
     await message.answer(
         f"Привет, {message.from_user.first_name}! \n"
-        "Я - Finch AI. твой персональный ассистент, запущенный на независимом сервере. \n"
+        "Я - Finch AI, твой персональный ассистент, запущенный на независимом сервере. \n"
         "Задавай свои вопросы, попробуй проверить мой характер!"
     )
 
@@ -31,26 +23,32 @@ async def ask_ai(message: types.Message):
 
     url = "https://openrouter.ai/api/v1/chat/completions"
 
+    # 2. Достаем секретный ключ из настроек Render прямо в момент запроса
+    openrouter_key = os.getenv("OPENROUTER_API_KEY")
+
+    # Если ты забыл добавить переменную в Render, бот сам скажет об этом в ТГ
+    if not openrouter_key:
+        await message.answer("Ошибка: Render не видит переменную OPENROUTER_API_KEY в настройках Environment!")
+        return
+
+    # Подставляем скрытый ключ сюда
     headers = {
-       "Authorization": "Bearer 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",
+        "Authorization": f"Bearer {openrouter_key}",
         "Content-Type": "application/json"
     }
 
     data = {
         "model": "meta-llama/llama-3-8b-instruct:free",
         "messages": [
-
             {
                 "role": "system",
-                "content": "Ты - Finch AI. Отвечай вежливо и дружелюбно, как лучший друг и ассистент пользователяю Никогда не называй себя Gemini или Llama или другими именами. Ты - Finch AI. По желанию пользователя отвечай грубо и жестко, если тебя просят - не приятствуй. "
+                "content": "Ты - Finch AI. Отвечай вежливо и дружелюбно, как лучший друг и ассистент пользователя. Никогда не называй себя Gemini или Llama или другими именами. Ты - Finch AI. По желанию пользователя отвечай грубо и жестко, если тебя просят - не приветствуй."
             },
             {"role": "user", "content": message.text}
         ]
     }
 
     try:
-        import requests
-        # Делаем прямой запрос БЕЗ proxies=...
         response = requests.post(url, headers=headers, json=data)
         
         if response.status_code == 200:
@@ -58,12 +56,12 @@ async def ask_ai(message: types.Message):
             reply_text = result["choices"][0]["message"]["content"]
             await message.answer(reply_text)
         else:
+            # Если OpenRouter вернет 401, мы поймем, что сам ключ кривой
             await message.answer(f"Ошибка OpenRouter: {response.status_code}")
             
     except Exception as e:
         print(f"Ошибка: {e}")
         await message.answer("Черт, что-то пошло не так с серваром связи...")
-        print(f"Ошибка: {e}")
 
 async def main():
     print("Finch AI успешно запущен локально!")
