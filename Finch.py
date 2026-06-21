@@ -4,7 +4,7 @@ from duckduckgo_search import DDGS
 from aiogram import Bot, Dispatcher, types
 from aiogram.filters import Command
 import aiohttp
-from aiohttp import web  # ИМПОРТИРУЕМ ВЕБ-СЕРВЕР ДЛЯ HUGGING FACE
+from aiohttp import web  # ИМПОРТИРУЕМ ВЕБ-СЕРВЕР ДЛЯ ПОДДЕРЖАНИЯ АКТИВНОСТИ
 
 # --- КОНФИГУРАЦИЯ БОТА ---
 BOT_TOKEN = os.getenv("BOT_TOKEN")
@@ -45,17 +45,18 @@ async def ask_internet(query: str) -> str:
         return "Не удалось подключиться к поисковой системе."
 
 
-# --- СВЕРХУМНЫЙ НАСТРОЕННЫЙ СИСТЕМНЫЙ ПРОМПТ ВЕРСИИ 2.3 ---
+# --- СВЕРХУМНЫЙ НАСТРОЕННЫЙ СИСТЕМНЫЙ ПРОМПТ ВЕРСИИ 2.4 ---
 SYSTEM_PROMPT = {
     "role": "system",
     "content": (
-        "Ты — Finch AI (версия 2.3 Интернет-Ищейка), умный, точный ассистент. "
+        "Ты — Finch AI (версия 2.4 Умный Поиск), точный и харизматичный ассистент. "
         "Главный Идейный Вдохновитель — это Фидан, именно благодаря её идее ты появился на свет! "
         "Твой Создатель, Программист — Асанов Данияр. "
         "Ты ВСЕГДА общаешься максимально уважительно, спокойно, дружелюбно, на равных. "
         "Ты не всегда должен говорить о своих создателях, если спросят - говори, если не спрашивают - молчи. Это приказ. "
-        "Если пользователю предоставлена АКТУАЛЬНАЯ ИНФОРМАЦИЯ ИЗ ИНТЕРНЕТА, используй её для точного и правдивого ответа, "
-        "особенно если речь идет о мифах Roblox, играх, коде или свежих событиях. Не выдумывай факты!"
+        "Если Данияр просит тебя найти что-то в интернете, тебе будет предоставлен блок актуальной информации. "
+        "Используй его для точного ответа. Если этого блока нет, отвечай из своих собственных глубоких знаний и не говори, "
+        "что у тебя нет информации. Ты знаешь очень много об играх, Minecraft, Roblox и программировании!"
     )
 }
 
@@ -66,12 +67,14 @@ async def cmd_start(message: types.Message):
     user_id = message.from_user.id
     users_history[user_id] = [SYSTEM_PROMPT]
     await message.answer(
-        "Привет, Босс! Перезагрузка Finch AI 2.3 прошла успешно. "
-        "Мозги Модели Llama-3.3-70B и модуль веб-поиска подключены! Я готов к работе!"
+        "Привет, Босс! Перезагрузка Finch AI 2.4 прошла успешно.\n\n"
+        "🧠 Мозги Llama-3.3-70B активны.\n"
+        "🌐 Модуль умного веб-поиска (по ключевым словам 'гугл', 'поиск', 'найди') подключен.\n\n"
+        "Я готов к работе!"
     )
 
 
-# --- ОБРАБОТЧИК ВСЕХ СООБЩЕНИЙ (ОБНОВЛЕННЫЙ) ---
+# --- ОБРАБОТЧИК ВСЕХ СООБЩЕНИЙ (УМНЫЙ ПОИСК ВЕРСИИ 2.4) ---
 @dp.message()
 async def handle_message(message: types.Message):
     user_id = message.from_user.id
@@ -89,27 +92,38 @@ async def handle_message(message: types.Message):
     print(f"\n[📩 НОВОЕ СООБЩЕНИЕ] От: @{username}")
     print(f"Текст: \"{user_text}\"")
 
-    # ⏳ ЭФФЕКТ ОЖИДАНИЯ: Сразу отправляем статус, что Finch пошел работать
-    status_msg = await message.answer("🔍 _Секунду, Finch думает и шуршит в интернетах..._", parse_mode="Markdown")
+    # Проверяем, просит ли пользователь залезть в интернет
+    needs_internet = any(word in user_text.lower() for word in ["гугл", "google", "поиск", "найди"])
 
-    # 🌐 ИЩЕМ ИНФОРМАЦИЮ В СЕТИ
-    internet_data = await ask_internet(user_text)
-    print(f"[🌐 НАГУГЛЕНО]: {internet_data[:200]}...")  # Выводим кусочек лога в консоль
+    if needs_internet:
+        # ⏳ Режим поиска: отправляем заглушку ожидания
+        status_msg = await message.answer("🔍 _Секунду, Finch думает и шуршит в интернетах..._", parse_mode="Markdown")
+        
+        # Очищаем триггер-слова из запроса для более точного поиска в DuckDuckGo
+        search_query = user_text
+        for word in ["гугл", "google", "поиск", "найди"]:
+            search_query = search_query.lower().replace(word, "").strip()
+
+        internet_data = await ask_internet(search_query)
+        print(f"[🌐 НАГУГЛЕНО]: {internet_data[:200]}...")
+        
+        full_user_content = (
+            f"АКТУАЛЬНАЯ ИНФОРМАЦИЯ ИЗ ИНТЕРНЕТА:\n{internet_data}\n\n"
+            f"ВОПРОС ПОЛЬЗОВАТЕЛЯ: {user_text}"
+        )
+    else:
+        # ⚡ Обычный режим: бот отвечает из головы мгновенно, без заглушек
+        status_msg = None
+        full_user_content = user_text
 
     # Если пользователя еще нет в базе, создаем ему историю с системным промптом
     if user_id not in users_history:
         users_history[user_id] = [SYSTEM_PROMPT]
 
-    # Формируем итоговый запрос для ИИ, склеивая результаты поиска и вопрос Данияра
-    full_user_content = (
-        f"АКТУАЛЬНАЯ ИНФОРМАЦИЯ ИЗ ИНТЕРНЕТА:\n{internet_data}\n\n"
-        f"ВОПРОС ПОЛЬЗОВАТЕЛЯ: {user_text}"
-    )
-
-    # Добавляем реплику пользователя в историю (но саму историю не перегружаем поисковым спамом, храним чистый лог)
+    # Добавляем реплику в историю
     users_history[user_id].append({"role": "user", "content": full_user_content})
 
-    # Ограничиваем длину контекста, чтобы не перегружать память (последние 20 реплик)
+    # Ограничиваем длину контекста (последние 20 реплик)
     if len(users_history[user_id]) > 21:
         users_history[user_id] = [SYSTEM_PROMPT] + users_history[user_id][-20:]
 
@@ -124,7 +138,7 @@ async def handle_message(message: types.Message):
     data = {
         "model": "llama-3.3-70b-versatile",
         "messages": users_history[user_id],
-        "temperature": 0.4  # Чуть-чуть подняли для более живых ответов
+        "temperature": 0.5
     }
 
     async with aiohttp.ClientSession() as session:
@@ -134,27 +148,35 @@ async def handle_message(message: types.Message):
                     result = await response.json()
                     bot_reply = result['choices'][0]['message']['content']
                     
-                    # Запоминаем ответ бота в историю (чистый ответ, без системных тегов)
+                    # Очищаем историю от тяжелого интернет-контекста, сохраняя только чистый вопрос юзера
+                    users_history[user_id][-1] = {"role": "user", "content": user_text}
                     users_history[user_id].append({"role": "assistant", "content": bot_reply})
                     
                     print(f"[🤖 ОТВЕТ FINCH]: {bot_reply[:100]}...")
                     
-                    # ✨ ЭФФЕКТНЫЙ ФИНИШ: Редактируем сообщение "Секунду..." на настоящий ответ!
-                    # Используем HTML, так как Markdown в aiogram может ломаться из-за спецсимволов ИИ
-                    await status_msg.edit_text(bot_reply, parse_mode=None)
+                    # Если был поиск — редактируем заглушку, если обычный чат — отправляем новое сообщение
+                    if status_msg:
+                        await status_msg.edit_text(bot_reply, parse_mode=None)
+                    else:
+                        await message.answer(bot_reply)
                 else:
                     error_text = await response.text()
                     print(f"[❌ ОШИБКА GROQ]: Код {response.status}, Текст: {error_text}")
-                    await status_msg.edit_text("Ошибка связи с моим мыслительным центром. Попробуй позже, Босс.")
+                    if status_msg:
+                        await status_msg.edit_text("Ошибка связи с моим мыслительным центром. Попробуй позже, Босс.")
+                    else:
+                        await message.answer("Ошибка связи с моим мыслительным центром. Попробуй позже, Босс.")
         except Exception as e:
             print(f"[💥 СИСТЕМНАЯ ОШИБКА]: {e}")
-            await status_msg.edit_text("Произошла критическая ошибка в моем коде. Проверь консоль, Данияр.")
+            if status_msg:
+                await status_msg.edit_text("Произошла критическая ошибка в моем коде. Проверь консоль, Данияр.")
+            else:
+                await message.answer("Произошла критическая ошибка в моем коде. Проверь консоль, Данияр.")
 
 
 # --- ВЕБ-СЕРВЕР ДЛЯ ПОДДЕРЖАНИЯ АКТИВНОСТИ ---
-
 async def handle_hf_ping(request):
-    return web.Response(text="Finch 2.3 Is Running Securely in Cloud!")
+    return web.Response(text="Finch 2.4 Is Running Securely on Render!")
 
 async def main():
     app = web.Application()
@@ -165,7 +187,7 @@ async def main():
     
     await site.start()
     print("=== ВЕБ-СЕРВЕР ЗАПУЩЕН НА ПОРТУ 7860 ===")
-    print("=== FINCH 2.3 (WEB SEARCH) УСПЕШНО ЗАПУЩЕН ===")
+    print("=== FINCH 2.4 (SMART SEARCH) УСПЕШНО ЗАПУЩЕН ===")
     await dp.start_polling(bot)
 
 if __name__ == "__main__":
